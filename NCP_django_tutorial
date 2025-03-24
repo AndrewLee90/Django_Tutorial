@@ -1,0 +1,103 @@
+# Django 로컬 라이브러리 튜토리얼 정리
+
+## 1. 가상환경 생성 및 활성화
+
+```bash
+# 가상환경 생성 및 활성화
+python -m venv venv
+source venv/bin/activate  # Windows는 venv\Scripts\activate
+```
+
+## 2. Django 설치 및 프로젝트 생성
+
+```bash
+pip install django
+django-admin startproject locallibrary
+cd locallibrary
+python manage.py startapp catalog
+```
+
+## 3. settings.py 설정
+
+- `INSTALLED_APPS`에 `catalog` 추가:
+
+```python
+INSTALLED_APPS = [
+    ...
+    'catalog',
+]
+```
+
+- `ALLOWED_HOSTS` 수정:
+
+```python
+ALLOWED_HOSTS = ['223.130.130.225', '0.0.0.0', 'localhost']
+```
+
+## 4. 모델 작성 및 마이그레이션
+
+- `catalog/models.py`에서 모델 작성 후 마이그레이션:
+
+```bash
+python manage.py makemigrations catalog
+python manage.py migrate
+```
+
+- **문제 해결:** `UniqueConstraint` 추가 후 마이그레이션 과정에서 발생한 문제 해결 방법:
+1. `catalog/migrations/0027_auto.py` 생성 후 아래 내용 추가:
+
+```python
+from django.db import migrations, models
+from django.db.models import UniqueConstraint
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('catalog', '0026_alter_book_author_alter_genre_name_and_more'),
+    ]
+
+    operations = [
+        migrations.AddConstraint(
+            model_name='genre',
+            constraint=UniqueConstraint(
+                fields=['genre_name'],
+                name='unique_genre_name_case_insensitive'
+            ),
+        ),
+    ]
+```
+
+2. 다시 마이그레이션 적용:
+
+```bash
+python manage.py migrate
+```
+
+## 5. 서버 실행 및 외부 접속
+
+```bash
+# 서버 실행
+python manage.py runserver 0.0.0.0:8000
+```
+
+- 공용 IP로 접속 시 **Invalid HTTP_HOST header** 오류 발생 → `ALLOWED_HOSTS` 설정을 확인하고 공용 IP 추가 후 재시작.
+
+## 6. 기타 문제 해결
+
+- 마이그레이션 누락 문제 시:
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+- 포트 개방 확인 및 방화벽 설정 조정 필요.
+
+## 7. 성공 확인
+
+- 공용 IP: `http://223.130.130.225:8000` 접속 성공 🎉
+
+---
+
+이렇게 설정을 완료했습니다. 앞으로 같은 문제를 방지하기 위해 반드시 `ALLOWED_HOSTS`와 마이그레이션 상태를 꼼꼼히 확인하세요!
+
